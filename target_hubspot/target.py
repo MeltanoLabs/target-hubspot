@@ -31,13 +31,13 @@ class TargetHubSpot(Target):
                         "columnName",
                         th.StringType,
                         required=True,
-                        description=""
+                        description="The name of the column header. This is based on the stream from a tap."
                     ),
                     th.Property(
                         "propertyName",
                         th.StringType,
                         required=True,
-                        description=""
+                        description="The internal name of the HubSpot property that the data will map to. Settings -> Data Management -> Properties. Then select the object type from the drop down, search for the property, click on it, then next to the label is a code symbol that will show you the internal name for the property."
                     ),
                     th.Property(
                         "columnObjectTypeId",
@@ -45,7 +45,7 @@ class TargetHubSpot(Target):
                         required=True,
                         # TODO validate this some other way since you can use custom values
                         allowed_values=["0-1", "0-2", "0-3", "0-5", "0-48", "0-49", "0-47", "0-4", "0-27", "0-7", "0-8", "0-18", "0-116", "0-54", "0-19"],
-                        description="https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id"
+                        description="The name or objectTypeId value of the object or activity to which the data belongs. Refer to [this article](https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id) for a full list of objectTypeId values."
                     ),
                     th.Property(
                         "columnType",
@@ -54,17 +54,17 @@ class TargetHubSpot(Target):
                             "HUBSPOT_OBJECT_ID",
                             "HUBSPOT_ALTERNATE_ID",
                         ],
-                        description="https://developers.hubspot.com/docs/api/crm/understanding-the-crm"
+                        description="An optional field used to specify that a column contains a unique identifier property. This is how the import knows that field to update/upsert on. See the [unique identifier docs](https://developers.hubspot.com/docs/api/crm/understanding-the-crm) for more details."
                     )
                 )
             ),
             required=True,
-            description="",
+            description="An array including an object entry for each column in your import file stream.",
         ),
         th.Property(
             "date_format",
             th.StringType,
-            description="",
+            description="The format for dates included in the import file stream.",
             default="YEAR_MONTH_DAY",
             allowed_values=[
                 "MONTH_DAY_YEAR",
@@ -75,7 +75,7 @@ class TargetHubSpot(Target):
         th.Property(
             "import_operations",
             th.StringType,
-            description="",
+            description="Used to indicate whether the import should create and update, only create, or only update records for a certain object or activity.",
             default="UPDATE",
             allowed_values=[
                 "CREATE",

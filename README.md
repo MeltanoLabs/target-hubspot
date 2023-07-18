@@ -15,9 +15,9 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | Setting             | Required | Default | Description |
 |:--------------------|:--------:|:-------:|:------------|
 | access_token        | True     | None    | Your HubSpot private app API access token. See the [docs](https://developers.hubspot.com/docs/api/private-apps) for more details. |
-| column_mapping      | True     | None    |             |
-| date_format         | False    | YEAR_MONTH_DAY |             |
-| import_operations   | False    | UPDATE  |             |
+| column_mapping      | True     | None    | An array including an object entry for each column in your import file stream. |
+| date_format         | False    | YEAR_MONTH_DAY | The format for dates included in the import file stream. |
+| import_operations   | False    | UPDATE  | Used to indicate whether the import should create and update, only create, or only update records for a certain object or activity. |
 | stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
