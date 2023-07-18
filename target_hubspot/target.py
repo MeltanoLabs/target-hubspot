@@ -17,20 +17,71 @@ class TargetHubSpot(Target):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "filepath",
+            "access_token",
             th.StringType,
-            description="The path to the target output file",
+            secret=True,
+            required=True,
+            description="Your HubSpot private app API access token. See the [docs](https://developers.hubspot.com/docs/api/private-apps) for more details.",
         ),
         th.Property(
-            "file_naming_scheme",
-            th.StringType,
-            description="The scheme with which output files will be named",
+            "column_mapping",
+            th.ArrayType(
+                th.ObjectType(
+                    th.Property(
+                        "columnName",
+                        th.StringType,
+                        required=True,
+                        description=""
+                    ),
+                    th.Property(
+                        "propertyName",
+                        th.StringType,
+                        required=True,
+                        description=""
+                    ),
+                    th.Property(
+                        "columnObjectTypeId",
+                        th.StringType,
+                        required=True,
+                        # TODO validate this some other way since you can use custom values
+                        allowed_values=["0-1", "0-2", "0-3", "0-5", "0-48", "0-49", "0-47", "0-4", "0-27", "0-7", "0-8", "0-18", "0-116", "0-54", "0-19"],
+                        description="https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id"
+                    ),
+                    th.Property(
+                        "columnType",
+                        th.StringType,
+                        allowed_values=[
+                            "HUBSPOT_OBJECT_ID",
+                            "HUBSPOT_ALTERNATE_ID",
+                        ],
+                        description="https://developers.hubspot.com/docs/api/crm/understanding-the-crm"
+                    )
+                )
+            ),
+            required=True,
+            description="",
         ),
         th.Property(
-            "auth_token",
+            "date_format",
             th.StringType,
-            secret=True,  # Flag config as protected.
-            description="The path to the target output file",
+            description="",
+            default="YEAR_MONTH_DAY",
+            allowed_values=[
+                "MONTH_DAY_YEAR",
+                "YEAR_MONTH_DAY",
+                "DAY_MONTH_YEAR",
+            ]
+        ),
+        th.Property(
+            "import_operations",
+            th.StringType,
+            description="",
+            default="UPDATE",
+            allowed_values=[
+                "CREATE",
+                "UPDATE",
+                "UPSERT",
+            ]
         ),
     ).to_dict()
 

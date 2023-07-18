@@ -1,61 +1,36 @@
-# target-hubspot
+# `target-hubspot`
 
-`target-hubspot` is a Singer target for HubSpot.
+Sample target for HubSpot.
 
-Build with the [Meltano Target SDK](https://sdk.meltano.com).
+Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 
-<!--
+## Capabilities
 
-Developer TODO: Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPi repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
+* `about`
+* `stream-maps`
+* `schema-flattening`
 
-## Installation
+## Settings
 
-Install from PyPi:
+| Setting             | Required | Default | Description |
+|:--------------------|:--------:|:-------:|:------------|
+| access_token        | True     | None    | Your HubSpot private app API access token. See the [docs](https://developers.hubspot.com/docs/api/private-apps) for more details. |
+| column_mapping      | True     | None    |             |
+| date_format         | False    | YEAR_MONTH_DAY |             |
+| import_operations   | False    | UPDATE  |             |
+| stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
+| stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
+| flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
+| flattening_max_depth| False    | None    | The max depth to flatten schemas. |
 
-```bash
-pipx install target-hubspot
-```
+A full list of supported settings and capabilities is available by running: `target-hubspot --about`
 
-Install from GitHub:
+## Supported Python Versions
 
-```bash
-pipx install git+https://github.com/ORG_NAME/target-hubspot.git@main
-```
-
--->
-
-## Configuration
-
-### Accepted Config Options
-
-<!--
-Developer TODO: Provide a list of config options accepted by the target.
-
-This section can be created by copy-pasting the CLI output from:
-
-```
-target-hubspot --about --format=markdown
-```
--->
-
-A full list of supported settings and capabilities for this
-target is available by running:
-
-```bash
-target-hubspot --about
-```
-
-### Configure using environment variables
-
-This Singer target will automatically import any environment variables within the working directory's
-`.env` if the `--config=ENV` is provided, such that config values will be considered if a matching
-environment variable is set either in the terminal context or in the `.env` file.
-
-### Source Authentication and Authorization
-
-<!--
-Developer TODO: If your target requires special access on the destination system, or any special authentication requirements, provide those here.
--->
+* 3.8
+* 3.9
+* 3.10
+* 3.11
 
 ## Usage
 
@@ -100,12 +75,6 @@ poetry run target-hubspot --help
 
 _**Note:** This target will work in any Singer environment and does not require Meltano.
 Examples here are for convenience and to streamline end-to-end orchestration scenarios._
-
-<!--
-Developer TODO:
-Your project comes with a custom `meltano.yml` project file already created. Open the `meltano.yml` and follow any "TODO" items listed in
-the file.
--->
 
 Next, install Meltano (if you haven't already) and any needed plugins:
 
