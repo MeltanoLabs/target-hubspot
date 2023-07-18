@@ -37,14 +37,26 @@ class HubSpotSink(BatchSink):
 
     def _write_csv(self, csv_filename, records):
         with open(csv_filename, "w") as f:
-            writer = csv.DictWriter(f, fieldnames=self.schema["properties"].keys())
+            self.schema["properties"].keys()
+            writer = csv.DictWriter(f, fieldnames=self._get_sorted_headers())
             writer.writeheader()
             for record in records:
-                writer.writerow(record)
+                writer.writerow(self._sort_record(record))
 
-    def _validate_column_mapping(self, records):
-        # TODO: raise exception if records and column mapping counts dont match
-        pass
+    def _validate_column_mapping(self):
+        stream_len = len(self.schema["properties"].keys())
+        col_mapping_len = len(self.config["column_mapping"])
+        if stream_len != col_mapping_len:
+            raise Exception(f"The count of properties in the input stream does not match the count of column mappings. Please check your config. Stream: {stream_len} Column Mapping: {col_mapping_len}")
+
+    def _get_sorted_column_mappings(self):
+        return sorted(self.config["column_mapping"], key=lambda d: d['columnName']) 
+
+    def _get_sorted_headers(self):
+        return sorted(self.schema["properties"])
+
+    def _sort_record(self, record):
+        return dict(sorted(record.items()))
 
     def _build_request_kwargs(self, csv_filename, import_name):
         import_request = {
@@ -57,7 +69,7 @@ class HubSpotSink(BatchSink):
                 "fileFormat": "CSV",
                 "fileImportPage": {
                     "hasHeader": True,
-                    "columnMappings": self.config["column_mapping"]
+                    "columnMappings": self._get_sorted_column_mappings()
 
                 }
             }
@@ -81,13 +93,12 @@ class HubSpotSink(BatchSink):
         self.logger.info(f"Import {import_id} Completed: {counters}")
 
     def _import_csv_and_poll_for_status(self, request_kwargs):
-        response = self.api_client.crm.imports.core_api.create(**request_kwargs)
         import_id, state = self._start_import(request_kwargs)
         while state not in {"DONE", "FAILED", "CANCELED"}:
             time.sleep(2)
             state, metadata = self._get_import_status(import_id)
             self.logger.debug(f"Import {import_id} Status: {state}")
-        return metadata.counters
+        return import_id, metadata.counters
 
     def process_batch(self, context: dict) -> None:
         """Write out any prepped records and return once fully written.
@@ -100,12 +111,11 @@ class HubSpotSink(BatchSink):
         import_name = f"target-hubspot-{self.stream_name}-{now_ts}"
         csv_filename = f"{import_name}.csv"
         try:
-            # TODO: do records need to be deterministically sorted so mapping lines up?
             self._write_csv(csv_filename, records)
-            self._validate_column_mapping(records)
+            self._validate_column_mapping()
             request_kwargs = self._build_request_kwargs(csv_filename, import_name)
-            completion_metadata = self._import_csv_and_poll_for_status(request_kwargs)
-            self._validate_completion_metadata(completion_metadata)
+            import_id, completion_metadata = self._import_csv_and_poll_for_status(request_kwargs)
+            self._validate_completion_metadata(import_id, completion_metadata)
         except Exception as ex:
             self.logger.error(f"Exception raised while submitting job to HubSpot: {ex}")
             raise ex
