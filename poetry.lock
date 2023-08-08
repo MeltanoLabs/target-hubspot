@@ -458,13 +458,13 @@ test = ["objgraph", "psutil"]
 
 [[package]]
 name = "hubspot-api-client"
-version = "8.0.0"
+version = "8.1.0"
 description = "HubSpot API client"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "hubspot-api-client-8.0.0.tar.gz", hash = "sha256:be3f6ebbaa13691c11298adbb657913fdd27b1f2e713a0177eae29d8557bf0de"},
-    {file = "hubspot_api_client-8.0.0-py3-none-any.whl", hash = "sha256:705255eee980b342f6d0b5fafe8c64a6eb041bb5285fa457d97a785ca3b53388"},
+    {file = "hubspot-api-client-8.1.0.tar.gz", hash = "sha256:e8c25c2a12ab3801a6ab051ad7b25766a2e743928ed6ce9a309672c53b973044"},
+    {file = "hubspot_api_client-8.1.0-py3-none-any.whl", hash = "sha256:2b255b6330770b263995baa07a831940f8bd6a692e8462a3a83771f65e718736"},
 ]
 
 [package.dependencies]
@@ -1239,4 +1239,4 @@ s3 = ["fs-s3fs"]
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.12,>=3.7.1"
-content-hash = "cee2a62968707a2e7748ba47e753db1bcaf15db346752b7c814e29b3b41adf61"
+content-hash = "82b5479d9cc46da7d4c61b84d824fb6b17baa018159baa24bf1216d6456c6cd0"
