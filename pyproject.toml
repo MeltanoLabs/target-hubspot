@@ -18,7 +18,7 @@ requests = "^2.31.0"
 hubspot-api-client = "^8.0.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.2.1"
+pytest = "^7.4.1"
 singer-sdk = { version="^0.30.0", extras = ["testing"] }
 
 [tool.poetry.extras]
