@@ -1,0 +1,38 @@
+version: 2.1
+orbs:
+  aws-ecr: circleci/aws-ecr@8.2.1
+  datadog-agent: datadog/agent@3.2.0
+  python: circleci/python@2.1.1
+  node: circleci/node@5.1.0
+  aws-cli: circleci/aws-cli@2.0.6
+  gcp-cli: circleci/gcp-cli@3.1.1
+
+executors:
+  python-3-10:
+    resource_class: large
+    docker:
+      - image: cimg/python:3.10.12
+
+jobs:
+  test-ml-server:
+    parallelism: 8
+    executor: ml-server-deps
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: poetry
+      - run: poetry run ruff .
+      - run: poetry run mypy .
+      - run: poetry run pytest
+      - store_test_results:
+          path: build/test_report.xml
+
+workflows:
+  build:
+    jobs:
+      - test-ml-server:
+          filters:
+            branches:
+              ignore:
+                - main
+                - staging

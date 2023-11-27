@@ -43,7 +43,7 @@ class HubSpotSink(BatchSink):
             for record in records:
                 writer.writerow(self._sort_record(record))
 
-    def _validate_column_mapping(self):
+    def _validate_column_mapping(self) -> None:
         stream_len = len(self.schema["properties"].keys())
         col_mapping_len = len(self.config["column_mapping"])
         if stream_len != col_mapping_len:
