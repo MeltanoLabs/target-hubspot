@@ -14,6 +14,8 @@ from target_hubspot.sinks import (
 class TargetHubSpot(Target):
     """Sample target for HubSpot."""
 
+    max_size = 1_000
+
     name = "target-hubspot"
 
     config_jsonschema = th.PropertiesList(
