@@ -5,6 +5,7 @@ from __future__ import annotations
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 
+from target_hubspot.constants import HubspotStreamsEnum
 from target_hubspot.sinks import (
     HubSpotSink,
 )
@@ -17,27 +18,37 @@ class TargetHubSpot(Target):
 
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "access_token",
-            th.StringType,
-            required=False,
-            description="Token to authenticate against the API service",
-        ),
-        th.Property(
             "client_id",
             th.StringType,
-            required=False,
+            required=True,
             description="The OAuth app client ID.",
         ),
         th.Property(
             "client_secret",
             th.StringType,
-            required=False,
+            required=True,
+            secret=True,
             description="The OAuth app client secret.",
         ),
         th.Property(
             "refresh_token",
             th.StringType,
-            required=False,
+            required=True,
+            secret=True,
+            description="The OAuth app refresh token.",
+        ),
+
+        # We attempt to upload new data to HubSpot for the provided stream identifier
+        th.Property(
+            "stream_identifier",
+            th.StringType,
+            required=True,
+            description=f"The OAuth app refresh token. Supported types: {HubspotStreamsEnum.__members__.values()}",
+        ),
+        th.Property(
+            "filepath",
+            th.StringType,
+            required=True,
             description="The OAuth app refresh token.",
         ),
     ).to_dict()

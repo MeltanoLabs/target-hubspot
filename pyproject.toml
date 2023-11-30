@@ -16,15 +16,14 @@ singer-sdk = { version="^0.30.0" }
 fs-s3fs = { version = "^1.1.1", optional = true }
 requests = "^2.31.0"
 hubspot-api-client = "^8.0.0"
-
-[tool.poetry.dev-dependencies]
-pytest = "^7.2.1"
-singer-sdk = { version="^0.30.0", extras = ["testing"] }
+pydantic = "^2.5.2"
 
 [tool.poetry.extras]
 s3 = ["fs-s3fs"]
 
 [tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+singer-sdk = { version="^0.30.0", extras = ["testing"] }
 mypy = "^1.7.1"
 types-python-dateutil = "^2.8.19.14"
 types-jsonschema = "^4.20.0.0"
@@ -37,6 +36,15 @@ types-setuptools = "^68.2.0.2"
 types-six = "^1.16.21.9"
 types-requests = "^2.0.0"
 urllib3 = "^1.0.0"
+cached-property = "^1.5.2"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--disable-warnings", # Disable at some point in the future
+    "--import-mode=importlib", # Generally recommend as best practice by pytest https://docs.pytest.org/en/7.1.x/explanation/pythonpath.html
+    "--junitxml=build/test_report.xml", # Used for CircleCI display
+    "-v" # We tend to want as much output as possible
+]
 
 [tool.ruff]
 ignore = [
