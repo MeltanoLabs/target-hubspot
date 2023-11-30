@@ -37,6 +37,7 @@ types-six = "^1.16.21.9"
 types-requests = "^2.0.0"
 urllib3 = "^1.0.0"
 cached-property = "^1.5.2"
+ruff = "^0.1.6"
 
 [tool.pytest.ini_options]
 addopts = [
