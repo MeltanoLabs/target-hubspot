@@ -29,3 +29,5 @@ def _run_on_path(filepath: str) -> None:
 
 def test_contacts() -> None:
     _run_on_path("./tests/resources/contacts.jsonl")
+    # output = capsys.readouterr().out
+    # assert "Processing batch." in output

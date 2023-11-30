@@ -464,26 +464,6 @@ docs = ["Sphinx"]
 test = ["objgraph", "psutil"]
 
 [[package]]
-name = "hubspot-api-client"
-version = "8.1.1"
-description = "HubSpot API client"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "hubspot-api-client-8.1.1.tar.gz", hash = "sha256:beedfeade5e335ba251b4c0e7bc93f3f7ac63f00bf52ef94d72d3af2d73cfc8c"},
-    {file = "hubspot_api_client-8.1.1-py3-none-any.whl", hash = "sha256:5b78981239fe98e6d98b455407998835092a1c58c51ea8eeb2d4da02944ae452"},
-]
-
-[package.dependencies]
-certifi = "*"
-python-dateutil = "*"
-six = ">=1.10"
-urllib3 = ">=1.15"
-
-[package.extras]
-dev = ["black", "pytest"]
-
-[[package]]
 name = "idna"
 version = "3.6"
 description = "Internationalized Domain Names in Applications (IDNA)"
@@ -1486,6 +1466,20 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3-binary"]
 
 [[package]]
+name = "tenacity"
+version = "8.2.3"
+description = "Retry code until it succeeds"
+optional = false
+python-versions = ">=3.7"
+files = [
+    { file = "tenacity-8.2.3-py3-none-any.whl", hash = "sha256:ce510e327a630c9e1beaf17d42e6ffacc88185044ad85cf74c0a8887c6a0f88c" },
+    { file = "tenacity-8.2.3.tar.gz", hash = "sha256:5398ef0d78e63f40007c1fb4c0bff96e1911394d2fa8d194f77619c05ff6cc8a" },
+]
+
+[package.extras]
+doc = ["reno", "sphinx", "tornado (>=4.5)"]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -1671,4 +1665,4 @@ s3 = ["fs-s3fs"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.12"
-content-hash = "ee6143af952456946894f3cb134f7ab9ff95bb92874d379da5403cc274d2ac07"
+content-hash = "d7ff5228bfa21fed4d8aab41716b8a7dcad77f6e379c9cd5bdfe67ce07830e1e"

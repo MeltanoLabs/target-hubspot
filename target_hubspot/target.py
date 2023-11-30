@@ -5,7 +5,7 @@ from __future__ import annotations
 from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 
-from target_hubspot.constants import HubspotStreamsEnum
+from target_hubspot.model import HubspotObjectsEnum
 from target_hubspot.sinks import (
     HubSpotSink,
 )
@@ -45,7 +45,7 @@ class TargetHubSpot(Target):
             "stream_identifier",
             th.StringType,
             required=True,
-            description=f"The OAuth app refresh token. Supported types: {HubspotStreamsEnum.__members__.values()}",
+            description=f"The OAuth app refresh token. Supported types: {HubspotObjectsEnum.__members__.values()}",
         ),
         th.Property(
             "filepath",

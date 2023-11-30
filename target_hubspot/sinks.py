@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-import datetime
-from typing import Any
+from typing import Any, List
 
-from hubspot import HubSpot
 from singer_sdk.sinks import BatchSink
 
+from target_hubspot.client import HubspotClient
 from target_hubspot.constants import TargetConfig
-from target_hubspot.exception import PartialImportException
+from target_hubspot.model import HubspotObjectsEnum
 
 IMPORT_OPERATIONS_LOOKUP = {
     "CREATE": {"0-1": "CREATE"},
@@ -17,55 +16,72 @@ IMPORT_OPERATIONS_LOOKUP = {
     "UPSERT": {"0-3": "UPSERT"},
 }
 
+
 class HubSpotSink(BatchSink):
     """
-    HubSpot target sink class. Essentially a black box that takes individual records (batches) in and actually dumps them up into HubSpot.
+    Main service class. Entrypoint for handling records. You can view this as a black box that takes in Singer records and dumps them into HubSpot.
+
+    Responsible:
+    - Entrypoint for handling a batch of records
+    - Mapping from Singer to HubspotClient's strictly defined request body types
+
+    NOT responsible:
+    - Making requests (handled by HubspotClient)
+    - Handling retry logic (handled by HubspotClient)
 
     We use BatchSink rather than RecordSink because HubSpot supports bulk updates to things like contacts (https://legacydocs.hubspot.com/docs/methods/contacts/batch_create_or_update) and this lets us get much more throughput considering HubSpot rate limits at 100 requests per 10 seconds per end OAuth user.
 
     This won't matter for toy datasets, but will absolutely be meaningful for big clients, especially if we end up having to basically re-sync things every time.
     """
-    _typed_config: TargetConfig # strongly typed variant that helps stop bugs
-    _api_client: HubSpot
 
-    MAX_CONTACTS_BATCH_SIZE = 1000  # hard limit to size we can make batches; see: https://legacydocs.hubspot.com/docs/methods/contacts/batch_create_or_update
+    _typed_config: TargetConfig # strongly typed variant that helps stop bugs
+    _client: HubspotClient
+
+    max_size = 100  # base sink attribute that determines max batch size; HubSpot supports up to 1,000, but recommends 100, so we'll stick w/ their recommendation and just remember we can tune it at a later point if desired
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.logger.info(f"Attempting to parse this config as a strongly typed Pydantic object: {self.config}")
         self._typed_config = TargetConfig(**self.config)
+        self._client = HubspotClient(
+            config=self._typed_config,
+            logger=self.logger
+        )
 
-    def _validate_completion_metadata(self, import_id: str, counters: dict) -> None:
-        if counters.get("ERRORS"):
-            raise PartialImportException(f"Import {import_id} Had Errors Importing. See your import history https://knowledge.hubspot.com/crm-setup/view-and-analyze-previous-imports for more information on troubleshooting errors: {counters}")
-        self.logger.info(f"Import {import_id} Completed: {counters}")
+    def _handle_batch_contacts(self, records: List[dict]) -> None:
+        def _transform_record(record: dict) -> dict:
+            # transform a given record into the format HubSpot expects
+            return {
+                "vid": record["id"],
+                "properties": [
+                    {"property": key, "value": "value"}
+                    for key, value
+                    in record.items() if key != "id"
+                ]
+            }
 
-    # def process_record(self, record: dict, context: dict) -> None:
-    #     """Process a single record."""
-    #     self.logger.info(f"process_record called with config {self._typed_config} and record {record} and context {context}")
-    #     raise NotImplementedError("process_record is not implemented")
+        self.logger.info(f"Successfully updated {len(records)} records.")
+
+    def _handle_batch_companies(self, records: List[dict]) -> None:
+        raise NotImplementedError()
+
+    def _handle_batch_deals(self, records: List[dict]) -> None:
+        raise NotImplementedError()
 
     def process_batch(self, context: dict) -> None:
-        """Write out any prepped records and return once fully written.
-
-        Args:
-            context: Stream partition or context dictionary.
         """
-        self.logger.info(f"process_batch processing context: {context}")
-        now_ts = datetime.datetime.now().timestamp()
+        Processes list of records. Because we don't override `process_record()`, Meltano SDK automatically aggregates them into batches and feeds them in here at the `records` key of the `context` dict.
+        """
         records = context["records"]
-        self.logger.info(f"Processing Records: {records}")
-        import_name = f"target-hubspot-{self.stream_name}-{now_ts}"
-        csv_filename = f"{import_name}.csv"
+        self.logger.info(f"Processing batch. Has {len(records)} records.")
         try:
-            self.logger.info(f"Processing Records: {records}")
-            # df = pd.read_csv(self._typed_config.filepath)
-            # self._write_csv(csv_filename, records)
-            # self._validate_column_mapping()
-            # request_kwargs = self._build_request_kwargs(csv_filename, import_name)
-            # import_id, completion_metadata = self._import_csv_and_poll_for_status(request_kwargs)
-            # self._validate_completion_metadata(import_id, completion_metadata)
-            self.logger.info("Example!")
+            if self._typed_config.stream_identifier == HubspotObjectsEnum.CONTACTS:
+                self._handle_batch_contacts(records)
+            elif self._typed_config.stream_identifier == HubspotObjectsEnum.COMPANIES:
+                self._handle_batch_companies(records)
+            elif self._typed_config.stream_identifier == HubspotObjectsEnum.DEALS:
+                self._handle_batch_deals(records)
+            else:
+                raise NotImplementedError(f"Unsupported stream identifier: {self._typed_config.stream_identifier}. Available Options: {HubspotObjectsEnum.__members__.values()}")
         except Exception as e:
             self.logger.error(f"Exception raised when pushing records up to HubSpot: {e}")
             raise e
