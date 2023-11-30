@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
-from typing import Any, Callable, Iterable
+import typing as t
+from typing import Any, Callable
 
 import requests
-from singer_sdk.helpers.jsonpath import extract_jsonpath
 from singer_sdk.pagination import BaseAPIPaginator
 from singer_sdk.streams import RESTStream
 
-import typing as t
 if sys.version_info >= (3, 8):
     from functools import cached_property
 else:

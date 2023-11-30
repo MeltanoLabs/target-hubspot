@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import datetime
 import os
-from typing import Any, Dict
+from typing import Any
+
 from hubspot import HubSpot
 from singer_sdk.sinks import BatchSink
 
-from target_hubspot.constants import HubspotStreamsEnum, TargetConfig
+from target_hubspot.constants import TargetConfig
 from target_hubspot.exception import PartialImportException
-
 
 IMPORT_OPERATIONS_LOOKUP = {
     "CREATE": {"0-1": "CREATE"},
@@ -47,7 +47,7 @@ class HubSpotSink(BatchSink):
         """
         self.logger.info(f"process_batch called with config {self._typed_config} and context {context}")
         now_ts = datetime.datetime.now().timestamp()
-        records = context["records"]
+        # records = context["records"]
         import_name = f"target-hubspot-{self.stream_name}-{now_ts}"
         csv_filename = f"{import_name}.csv"
         try:

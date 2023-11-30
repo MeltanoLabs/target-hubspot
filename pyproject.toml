@@ -46,24 +46,15 @@ addopts = [
     "--junitxml=build/test_report.xml", # Used for CircleCI display
     "-v" # We tend to want as much output as possible
 ]
-
-[tool.ruff]
-ignore = [
-    "ANN101",  # missing-type-self
-    "ANN102",  # missing-type-cls
-]
-select = ["ALL"]
-src = ["target_hubspot"]
-target-version = "py37"
-
-[tool.ruff.flake8-annotations]
-allow-star-arg-any = true
-
-[tool.ruff.isort]
-known-first-party = ["target_hubspot"]
-
-[tool.ruff.pydocstyle]
-convention = "google"
+#
+#[tool.ruff]
+#ignore = [
+#    "ANN101",  # missing-type-self
+#    "ANN102",  # missing-type-cls
+#]
+#select = ["ALL"]
+#src = ["target_hubspot"]
+#target-version = "py37"
 
 [build-system]
 requires = ["poetry-core>=1.0.8"]
