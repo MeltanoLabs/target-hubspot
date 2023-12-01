@@ -22,7 +22,7 @@ class TargetConfig(target_hubspot.pydantic_config.BaseConfig):
         description="The refresh token of the current user's OAuth connection.",
     )
 
-    stream_identifier: HubspotObjectsEnum = Field(
+    object_type: HubspotObjectsEnum = Field(
         ...,
         description=f"The object type to upload data to. Supported types: {HubspotObjectsEnum.__members__.values()}",
     )
@@ -33,3 +33,6 @@ class TargetConfig(target_hubspot.pydantic_config.BaseConfig):
 
 
 HUBSPOT_ROOT_URL = "https://api.hubapi.com"
+
+AKKIO_PROPERTY_GROUP_NAME = "akkio"
+AKKIO_PROPERTY_GROUP_LABEL = "Akkio"

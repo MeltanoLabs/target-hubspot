@@ -4,9 +4,9 @@ from logging import Logger
 
 import requests
 
-from target_hubspot.client import _retry_hubspot
 from target_hubspot.config import ConfigInheriter
 from target_hubspot.constants import HUBSPOT_ROOT_URL, TargetConfig
+from target_hubspot.decorators import retry_hubspot
 from target_hubspot.exceptions import RetryException
 from target_hubspot.model import GetNewToken
 
@@ -27,7 +27,10 @@ class AuthenticationHandler(ConfigInheriter):
     @property
     def http_headers(self) -> dict:
         # AuthenticationHandler automatically refreshes this when stale
-        return {"Authorization": f"Bearer {self.access_token}"}
+        return {
+            "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json"
+        }
 
     @property
     def access_token(self) -> str:
@@ -36,11 +39,12 @@ class AuthenticationHandler(ConfigInheriter):
             self._access_token = self._get_token()
         return self._access_token
 
-    @_retry_hubspot
+    @retry_hubspot
     def _get_token(self) -> str:
+        self._logger.info(f"Retrieving new token linked to client_id {self._config.client_id}.")
         response = requests.post(
             HUBSPOT_ROOT_URL + "/oauth/v1/token",
-            json=self._refresh_token_body
+            data=self._refresh_token_body.model_dump()
         )
         if response.status_code >= 500 or response.status_code == 429:
             raise RetryException()  # trigger retry

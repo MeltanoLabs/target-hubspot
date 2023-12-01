@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any, Dict, List
 
 from singer_sdk.sinks import BatchSink
 
 from target_hubspot.client import HubspotClient
-from target_hubspot.constants import TargetConfig
-from target_hubspot.model import HubspotObjectsEnum
+from target_hubspot.constants import AKKIO_PROPERTY_GROUP_LABEL, AKKIO_PROPERTY_GROUP_NAME, TargetConfig
+from target_hubspot.encoder import TypeInferenceUtils
+from target_hubspot.model import BatchCreateProperties, BatchUpdateContacts, CreatePropertyGroup, HubspotContactUpdatePayload, HubspotObjectsEnum, HubspotPropertyPayload
 
 IMPORT_OPERATIONS_LOOKUP = {
     "CREATE": {"0-1": "CREATE"},
@@ -16,6 +17,9 @@ IMPORT_OPERATIONS_LOOKUP = {
     "UPSERT": {"0-3": "UPSERT"},
 }
 
+def _is_safe_key_to_modify(key: str) -> bool:
+    # In order to avoid any situations where we're messing w/ or even overwriting customer data we have nothing to do with, we pretty strictly limit the properties we're willing to modify.
+    return key != "id" and key.startswith("akkio")
 
 class HubSpotSink(BatchSink):
     """
@@ -35,31 +39,67 @@ class HubSpotSink(BatchSink):
     """
 
     _typed_config: TargetConfig # strongly typed variant that helps stop bugs
-    _client: HubspotClient
+    _hubspot_client: HubspotClient
+
 
     max_size = 100  # base sink attribute that determines max batch size; HubSpot supports up to 1,000, but recommends 100, so we'll stick w/ their recommendation and just remember we can tune it at a later point if desired
+
+    _first_record_setup_complete: bool = False  # whether we've pushed any new custom attributes up to HubSpot yet, which we want to do once at the beginning of each sync (as we can depend on schema being consistent across all records).
+    def _setup_with_first_record(self, record: Dict[str, Any]) -> None:
+        self._hubspot_client.create_property_group(
+            payload=CreatePropertyGroup.RequestPayload(
+                name=AKKIO_PROPERTY_GROUP_NAME,
+                label=AKKIO_PROPERTY_GROUP_LABEL
+            )
+        )
+
+        properties = [
+            HubspotPropertyPayload(
+                label=key, # TODO: Bit of a transform to be more user-friendly might be nice here
+                name=key,
+                id=key,
+                type=TypeInferenceUtils.determine_hubspot_data_type_for_object(value),
+                groupName=AKKIO_PROPERTY_GROUP_LABEL,
+                fieldType=TypeInferenceUtils.determine_hubspot_field_type_for_object(value)
+            )
+            for key, value in record.items()
+            if _is_safe_key_to_modify(key)
+        ]
+        self.logger.info(f"Pushing {len(properties)} new properties to HubSpot: {[property.name for property in properties]}")
+        self._hubspot_client.batch_create_properties(
+            payload=BatchCreateProperties.RequestPayload(
+                inputs=properties,
+            )
+        )
+        self._first_record_setup_complete = True
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._typed_config = TargetConfig(**self.config)
-        self._client = HubspotClient(
+        self._hubspot_client = HubspotClient(
             config=self._typed_config,
             logger=self.logger
         )
 
     def _handle_batch_contacts(self, records: List[dict]) -> None:
-        def _transform_record(record: dict) -> dict:
-            # transform a given record into the format HubSpot expects
-            return {
-                "vid": record["id"],
-                "properties": [
-                    {"property": key, "value": "value"}
-                    for key, value
-                    in record.items() if key != "id"
+        self.logger.info(f"Pushing updates to {len(records)} users (IDs: {[record['id'] for record in records]})")
+        def _sanitize_record(record: dict) -> dict:
+            output = {}
+            for key, value in record.items():
+                if _is_safe_key_to_modify(key):
+                    output[key] = TypeInferenceUtils.coerce_to_json_serializable(value)
+            return output
+        self._hubspot_client.batch_update_contacts(
+            payload=BatchUpdateContacts.RequestPayload(
+                inputs=[
+                    HubspotContactUpdatePayload(
+                        id=record["id"],
+                        properties=_sanitize_record(record)
+                    ) for record in records
                 ]
-            }
-
-        self.logger.info(f"Successfully updated {len(records)} records.")
+            )
+        )
+        self.logger.info(f"Successfully updated {len(records)} HubSpot contacts.")
 
     def _handle_batch_companies(self, records: List[dict]) -> None:
         raise NotImplementedError()
@@ -73,15 +113,20 @@ class HubSpotSink(BatchSink):
         """
         records = context["records"]
         self.logger.info(f"Processing batch. Has {len(records)} records.")
+
+        if not self._first_record_setup_complete:
+            # Handler for one-time operations that can't be in general setup() hook b/c they require schema knowledge
+            self._setup_with_first_record(context["records"][0])
+
         try:
-            if self._typed_config.stream_identifier == HubspotObjectsEnum.CONTACTS:
+            if self._typed_config.object_type == HubspotObjectsEnum.CONTACTS:
                 self._handle_batch_contacts(records)
-            elif self._typed_config.stream_identifier == HubspotObjectsEnum.COMPANIES:
+            elif self._typed_config.object_type == HubspotObjectsEnum.COMPANIES:
                 self._handle_batch_companies(records)
-            elif self._typed_config.stream_identifier == HubspotObjectsEnum.DEALS:
+            elif self._typed_config.object_type == HubspotObjectsEnum.DEALS:
                 self._handle_batch_deals(records)
             else:
-                raise NotImplementedError(f"Unsupported stream identifier: {self._typed_config.stream_identifier}. Available Options: {HubspotObjectsEnum.__members__.values()}")
+                raise NotImplementedError(f"Unsupported stream identifier: {self._typed_config.object_type}. Available Options: {HubspotObjectsEnum.__members__.values()}")
         except Exception as e:
             self.logger.error(f"Exception raised when pushing records up to HubSpot: {e}")
             raise e

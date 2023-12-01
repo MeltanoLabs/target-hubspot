@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import Any, List, Literal, Optional
 
 import target_hubspot.pydantic_config
 
@@ -46,8 +46,9 @@ class HubspotFieldTypes(str, Enum):
     CALCULATION_EQUATIUON = "calculation_equation"
 
 
-class _BatchCreatePropertiesRequestPayloadItem(target_hubspot.pydantic_config.BaseConfig):
+class HubspotPropertyPayload(target_hubspot.pydantic_config.BaseConfig):
     # Derived from: https://developers.hubspot.com/docs/api/crm/properties
+    id: str
     hidden: Optional[bool] = None
     displayOrder: Optional[int] = None
     description: Optional[str] = None
@@ -66,14 +67,21 @@ class _BatchCreatePropertiesRequestPayloadItem(target_hubspot.pydantic_config.Ba
 
 class BatchCreateProperties:
     class RequestPayload(target_hubspot.pydantic_config.BaseConfig):
-        items: List[_BatchCreatePropertiesRequestPayloadItem]
-        objectType: HubspotObjectsEnum
+        inputs: List[HubspotPropertyPayload]
 
+class HubspotContactUpdatePayload(target_hubspot.pydantic_config.BaseConfig):
+    id: int # MUST be the basic hubspot id; they claim in the docs you can use email and supply idProperty=email, but the bulk update endpoint just straight-up doesn't support it and it's horribly undocumented
+    properties: dict[str, Any]
 
 class BatchUpdateContacts:
-    class RequestPayloadItem(target_hubspot.pydantic_config.BaseConfig):
-        vid: int
-        properties: list[dict]
+    class RequestPayload(target_hubspot.pydantic_config.BaseConfig):
+        inputs: List[HubspotContactUpdatePayload]
 
     class ResponseBody(target_hubspot.pydantic_config.BaseConfig):
         pass
+
+class CreatePropertyGroup:
+
+    class RequestPayload(target_hubspot.pydantic_config.BaseConfig):
+        name: str
+        label: str

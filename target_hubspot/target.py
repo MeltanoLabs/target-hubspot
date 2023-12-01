@@ -42,10 +42,10 @@ class TargetHubSpot(Target):
 
         # We attempt to upload new data to HubSpot for the provided stream identifier
         th.Property(
-            "stream_identifier",
+            "object_type",
             th.StringType,
             required=True,
-            description=f"The OAuth app refresh token. Supported types: {HubspotObjectsEnum.__members__.values()}",
+            description=f"The HubSpot object type. Supported types: {HubspotObjectsEnum.__members__.values()}",
         ),
         th.Property(
             "filepath",
