@@ -4,16 +4,17 @@ from logging import Logger
 
 import requests
 
-from target_hubspot.config import ConfigInheriter
-from target_hubspot.constants import HUBSPOT_ROOT_URL, TargetConfig
+from target_hubspot.constants import HUBSPOT_ROOT_URL
+from target_hubspot.context import JobContext
 from target_hubspot.decorators import retry_hubspot
 from target_hubspot.exceptions import RetryException
-from target_hubspot.model import GetNewToken
+from target_hubspot.model import TargetConfig
+from target_hubspot.remote.model import GetNewToken
 
 _THIRTY_SECONDS = 30
 
 
-class AuthenticationHandler(ConfigInheriter):
+class AuthenticationHandler(JobContext):
     """
     Responsibilities:
     - Provide a @property representing an access token that is guaranteed to be valid (handles refreshing internally)

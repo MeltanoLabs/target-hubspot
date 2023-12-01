@@ -6,10 +6,11 @@ from typing import Any, Dict, List
 
 from singer_sdk.sinks import BatchSink
 
-from target_hubspot.client import HubspotClient
-from target_hubspot.constants import AKKIO_PROPERTY_GROUP_LABEL, AKKIO_PROPERTY_GROUP_NAME, TargetConfig
+from target_hubspot.constants import AKKIO_PROPERTY_GROUP_LABEL, AKKIO_PROPERTY_GROUP_NAME
 from target_hubspot.encoder import TypeInferenceUtils
-from target_hubspot.model import BatchCreateProperties, BatchUpdateContacts, CreatePropertyGroup, HubspotContactUpdatePayload, HubspotObjectsEnum, HubspotPropertyPayload
+from target_hubspot.model import HubspotObjectsEnum, TargetConfig
+from target_hubspot.remote.client import HubspotClient
+from target_hubspot.remote.model import BatchCreateProperties, BatchUpdate, CreatePropertyGroup, HubspotGenericItemUpdatePayload, HubspotPropertyPayload
 
 IMPORT_OPERATIONS_LOOKUP = {
     "CREATE": {"0-1": "CREATE"},
@@ -20,6 +21,15 @@ IMPORT_OPERATIONS_LOOKUP = {
 def _is_safe_key_to_modify(key: str) -> bool:
     # In order to avoid any situations where we're messing w/ or even overwriting customer data we have nothing to do with, we pretty strictly limit the properties we're willing to modify.
     return key != "id" and key.startswith("akkio")
+
+
+def _sanitize_record(record: dict) -> dict:
+    # sanitizes a given dict such that only values we know we want to update, and we know are safe to update, are present
+    output = {}
+    for key, value in record.items():
+        if _is_safe_key_to_modify(key):
+            output[key] = TypeInferenceUtils.coerce_to_json_serializable(value)
+    return output
 
 class HubSpotSink(BatchSink):
     """
@@ -82,17 +92,11 @@ class HubSpotSink(BatchSink):
         )
 
     def _handle_batch_contacts(self, records: List[dict]) -> None:
-        self.logger.info(f"Pushing updates to {len(records)} users (IDs: {[record['id'] for record in records]})")
-        def _sanitize_record(record: dict) -> dict:
-            output = {}
-            for key, value in record.items():
-                if _is_safe_key_to_modify(key):
-                    output[key] = TypeInferenceUtils.coerce_to_json_serializable(value)
-            return output
+        self.logger.info(f"Pushing updates to {len(records)} contacts (IDs: {[record['id'] for record in records]})")
         self._hubspot_client.batch_update_contacts(
-            payload=BatchUpdateContacts.RequestPayload(
+            payload=BatchUpdate.RequestPayload(
                 inputs=[
-                    HubspotContactUpdatePayload(
+                    HubspotGenericItemUpdatePayload(
                         id=record["id"],
                         properties=_sanitize_record(record)
                     ) for record in records
@@ -102,10 +106,32 @@ class HubSpotSink(BatchSink):
         self.logger.info(f"Successfully updated {len(records)} HubSpot contacts.")
 
     def _handle_batch_companies(self, records: List[dict]) -> None:
-        raise NotImplementedError()
+        self.logger.info(f"Pushing updates to {len(records)} users (IDs: {[record['id'] for record in records]})")
+        self._hubspot_client.batch_update_companies(
+            payload=BatchUpdate.RequestPayload(
+                inputs=[
+                    HubspotGenericItemUpdatePayload(
+                        id=record["id"],
+                        properties=_sanitize_record(record)
+                    ) for record in records
+                ]
+            )
+        )
+        self.logger.info(f"Successfully updated {len(records)} HubSpot companies.")
 
     def _handle_batch_deals(self, records: List[dict]) -> None:
-        raise NotImplementedError()
+        self.logger.info(f"Pushing updates to {len(records)} deals (IDs: {[record['id'] for record in records]})")
+        self._hubspot_client.batch_update_companies(
+            payload=BatchUpdate.RequestPayload(
+                inputs=[
+                    HubspotGenericItemUpdatePayload(
+                        id=record["id"],
+                        properties=_sanitize_record(record)
+                    ) for record in records
+                ]
+            )
+        )
+        self.logger.info(f"Successfully updated {len(records)} HubSpot deals.")
 
     def process_batch(self, context: dict) -> None:
         """
@@ -126,6 +152,7 @@ class HubSpotSink(BatchSink):
             elif self._typed_config.object_type == HubspotObjectsEnum.DEALS:
                 self._handle_batch_deals(records)
             else:
+                # TODO: We can add more / all object types here at some point in the future if we have demand, just focusing on Jon's "big three" (Contacts, Companies, Deals) for now.
                 raise NotImplementedError(f"Unsupported stream identifier: {self._typed_config.object_type}. Available Options: {HubspotObjectsEnum.__members__.values()}")
         except Exception as e:
             self.logger.error(f"Exception raised when pushing records up to HubSpot: {e}")

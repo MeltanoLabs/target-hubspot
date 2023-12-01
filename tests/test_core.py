@@ -8,7 +8,7 @@ from pathlib import Path
 
 from singer_sdk.testing import TargetTestRunner
 
-from target_hubspot.constants import TargetConfig
+from target_hubspot.model import TargetConfig
 from target_hubspot.target import TargetHubSpot
 
 SAMPLE_CONFIG: TargetConfig = TargetConfig(
@@ -28,6 +28,13 @@ def _run_on_path(filepath: str) -> None:
 
 
 def test_contacts() -> None:
+    # basic test that we can push contact updates in bulk to HubSpot
     _run_on_path("./tests/resources/contacts.jsonl")
-    # output = capsys.readouterr().out
-    # assert "Processing batch." in output
+
+def test_companies() -> None:
+    # basic test that we can push companies updates in bulk to HubSpot
+    _run_on_path("./tests/resources/companies.jsonl")
+
+def test_deals() -> None:
+    # basic test that we can push deals updates in bulk to HubSpot
+    _run_on_path("./tests/resources/deals.jsonl")

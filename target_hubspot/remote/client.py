@@ -4,19 +4,20 @@ from logging import Logger
 
 import requests
 
-from target_hubspot.auth import AuthenticationHandler
-from target_hubspot.config import ConfigInheriter
-from target_hubspot.constants import HUBSPOT_ROOT_URL, TargetConfig
+from target_hubspot.constants import HUBSPOT_ROOT_URL
+from target_hubspot.context import JobContext
 from target_hubspot.decorators import retry_hubspot
 from target_hubspot.exceptions import RetryException
-from target_hubspot.model import BatchCreateProperties, BatchUpdateContacts, CreatePropertyGroup
+from target_hubspot.model import HubspotObjectsEnum, TargetConfig
+from target_hubspot.remote.authentication import AuthenticationHandler
+from target_hubspot.remote.model import BatchCreateProperties, BatchUpdate, CreatePropertyGroup
 
 
 class HTTPMethod(str, Enum):
     GET = "GET"
     POST = "POST"
 
-class HubspotClient(ConfigInheriter):
+class HubspotClient(JobContext):
     """
     Responsible:
     - Extremely thin wrapper over HubSpot API, making all requests and returning strongly typed response bodies (intent = keep mapping out of this class)
@@ -55,9 +56,21 @@ class HubspotClient(ConfigInheriter):
         if response.status_code >= 400:
             raise Exception(f"{url} (status {response.status_code}): {response.text}. Payload: {json.dumps(body, indent=2)}")
 
-    def batch_update_contacts(self, payload: BatchUpdateContacts.RequestPayload) -> None:
+    def batch_update_contacts(self, payload: BatchUpdate.RequestPayload) -> None:
         self._post(
-            url=HUBSPOT_ROOT_URL + "/crm/v3/objects/contacts/batch/update",
+            url=HUBSPOT_ROOT_URL + f"/crm/v3/objects/{HubspotObjectsEnum.CONTACTS}/batch/update",
+            body=payload.model_dump(exclude_none=True)
+        )
+
+    def batch_update_companies(self, payload: BatchUpdate.RequestPayload) -> None:
+        self._post(
+            url=HUBSPOT_ROOT_URL + f"/crm/v3/objects/{HubspotObjectsEnum.COMPANIES}/batch/update",
+            body=payload.model_dump(exclude_none=True)
+        )
+
+    def batch_update_deals(self, payload: BatchUpdate.RequestPayload) -> None:
+        self._post(
+            url=HUBSPOT_ROOT_URL + f"/crm/v3/objects/{HubspotObjectsEnum.DEALS}/batch/update",
             body=payload.model_dump(exclude_none=True)
         )
 

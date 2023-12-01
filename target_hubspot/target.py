@@ -6,6 +6,7 @@ from singer_sdk import typing as th
 from singer_sdk.target_base import Target
 
 from target_hubspot.model import HubspotObjectsEnum
+from target_hubspot.parameters import MELTANO_MAX_BATCH_SIZE
 from target_hubspot.sinks import (
     HubSpotSink,
 )
@@ -14,7 +15,7 @@ from target_hubspot.sinks import (
 class TargetHubSpot(Target):
     """Sample target for HubSpot."""
 
-    max_size = 1_000
+    max_size = MELTANO_MAX_BATCH_SIZE
 
     name = "target-hubspot"
 
@@ -37,22 +38,14 @@ class TargetHubSpot(Target):
             th.StringType,
             required=True,
             secret=True,
-            description="The OAuth app refresh token.",
+            description="The refresh token we have on file for the user whose data we're exporting.",
         ),
-
-        # We attempt to upload new data to HubSpot for the provided stream identifier
         th.Property(
             "object_type",
             th.StringType,
             required=True,
-            description=f"The HubSpot object type. Supported types: {HubspotObjectsEnum.__members__.values()}",
-        ),
-        th.Property(
-            "filepath",
-            th.StringType,
-            required=True,
-            description="The OAuth app refresh token.",
-        ),
+            description=f"The HubSpot object type the records should be pushed up to. Supported types: {HubspotObjectsEnum.__members__.values()}",
+        )
     ).to_dict()
 
     default_sink_class = HubSpotSink

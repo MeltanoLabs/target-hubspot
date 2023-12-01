@@ -1,101 +1,79 @@
 # `target-hubspot`
 
-Sample target for HubSpot.
+Custom target for HubSpot built with the Meltano SDK.
 
 Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 
-## Capabilities
-
-* `about`
-* `stream-maps`
-* `schema-flattening`
-
 ## Settings
 
-| Setting             | Required | Default | Description |
-|:--------------------|:--------:|:-------:|:------------|
-| access_token        | True     | None    | Your HubSpot private app API access token. See the [docs](https://developers.hubspot.com/docs/api/private-apps) for more details. |
-| column_mapping      | True     | None    | An array including an object entry for each column in your import file stream. |
-| date_format         | False    | YEAR_MONTH_DAY | The format for dates included in the import file stream. |
-| import_operations   | False    | UPDATE  | Used to indicate whether the import should create and update, only create, or only update records for a certain object or activity. |
-| stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
-| stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
-| flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
-| flattening_max_depth| False    | None    | The max depth to flatten schemas. |
+| Setting       | Required | Default | Description                                                                                                             |
+|:--------------|:--------:|:-------:|:------------------------------------------------------------------------------------------------------------------------|
+| client_id     | True     | None    | The Client ID of your OAuth application.                                                                                |
+| client_secret | True     | None    | The Client Secret of your OAuth application.                                                                            |
+| refresh_token | True     | None    | The refresh token of the user whose data you're syncing.                                                                |
+| object_type   | True     | None    | The object type you'd like to make updates to. As of 11/30/23, only `contacts`, `companies`, and `deals` are supported. |
 
-A full list of supported settings and capabilities is available by running: `target-hubspot --about`
+## Getting Started
 
-## Supported Python Versions
-
-* 3.8
-* 3.9
-* 3.10
-* 3.11
-
-## Usage
-
-You can easily run `target-hubspot` by itself or in a pipeline using [Meltano](https://meltano.com/).
-
-### Executing the Target Directly
-
-```bash
-target-hubspot --version
-target-hubspot --help
-# Test using the "Carbon Intensity" sample:
-tap-carbon-intensity | target-hubspot --config /path/to/target-hubspot-config.json
+```shell
+pyenv install # installs Python version in `.python-version`
+python -m pip install poetry # install poetry if you don't have it yet
+python -m venv venv # create venv for isolated dependencies
+source venv/bin/activate # activate venv
+poetry install # install deps
 ```
 
-## Developer Resources
+Brief overview of the important files and functions:
 
-Follow these instructions to contribute to this project.
-
-### Initialize your Development Environment
-
-```bash
-pipx install poetry
-poetry install
+```shell
+target_hubspot/
+  remote/ # anything that touches the HubSpot API
+    authentication.py # handles refreshing OAuth tokens; HubSpot provides very short-lived tokens of only 30s
+    client.py # wrapper around HubSpot API
+    model.py # API-specific models
+  constants.py # a few hardcoded strings that didn't fit elsewhere
+  context.py # base class a few others inherit from to get easy access to the config and logger
+  decorators.py # bit of retry logic in here
+  encoder.py # need a few serialization shims to convert from Singer stuff to JSON-serializable
+  exceptions.py # one or two custom exceptions, nothing special
+  model.py # domain models used throughout the service (distinct from remote/models.py, where API-specific models are
+  pydantic_config.py # base config all other pydantic models inherit from
+  sinks.py # MAIN ENTRYPOINT. A `process_batch()` function here is the entrypoint of note.
+  target.py # ALSO IMPORTANT. Defines parameters we expect to be provided.
 ```
 
-### Create and Run Tests
+The only truly notable one is `sinks.py`. This is the main entrypoint.
 
-Create tests within the `tests` subfolder and
-  then run:
+## Batching
 
-```bash
-poetry run pytest
+Meltano provides two main sink interfaces that would be applicable here - `RecordSink` and `BatchSink`.
+
+- `RecordSink` uses `process_record()` as its main entrypoint and goes one at a time
+- `BatchSink` uses `process_batch()` as its main entrypoint and provides you hundreds of records at once
+
+We consciously use `BatchSink` and use HubSpot's batch update endpoints where possible because it's a _lot_ more efficient regarding rate limits. HubSpot limits OAuth tokens to 1,000 calls per ten minutes, which honestly isn't a ton if we're syncing massive amounts of data.
+
+## Testing
+
+Running tests is easy. First, add your config parameters to `.secrets/config.json` (is under `.gitignore` - you will have to create the file):
+
+```json
+{
+  "client_id": "5a50...",
+  "client_secret": "b3df...",
+  "refresh_token": "2e3c...",
+  "object_type": "contacts"
+}
 ```
 
-You can also test the `target-hubspot` CLI interface directly using `poetry run`:
+You can get these parameters by authenticating into HubSpot in staging, then finding your credentials in the credentials collection in Firestore.
 
-```bash
-poetry run target-hubspot --help
+If you don't have access to the HubSpot Sandbox Account, talk to Matt Hanselman, Matt Hall or Anden Acitelli and we'll get you access.
+
+Then, run them:
+
+```shell
+poetry run pytest .
 ```
 
-### Testing with [Meltano](https://meltano.com/)
-
-_**Note:** This target will work in any Singer environment and does not require Meltano.
-Examples here are for convenience and to streamline end-to-end orchestration scenarios._
-
-Next, install Meltano (if you haven't already) and any needed plugins:
-
-```bash
-# Install meltano
-pipx install meltano
-# Initialize meltano within this directory
-cd target-hubspot
-meltano install
-```
-
-Now you can test and orchestrate using Meltano:
-
-```bash
-# Test invocation:
-meltano invoke target-hubspot --version
-# OR run a test `elt` pipeline with the Carbon Intensity sample tap:
-meltano run tap-carbon-intensity target-hubspot
-```
-
-### SDK Dev Guide
-
-See the [dev guide](https://sdk.meltano.com/en/latest/dev_guide.html) for more instructions on how to use the Meltano Singer SDK to
-develop your own Singer taps and targets.
+The main test entrypoint, at time of writing, is `tests/test_core.py`. Tests pull JSONL files adhering to the Singer spec from `tests/resources/*.json.`, and feed them line-by-line to the target, asserting that no exceptions are thrown.
