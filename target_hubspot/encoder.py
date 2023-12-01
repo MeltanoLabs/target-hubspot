@@ -11,12 +11,12 @@ class TypeInferenceUtils:
         try:
             float(v)
             return HubspotDataTypes.NUMBER
-        except:
+        except Exception:
             pass
         try:
             int(v)
             return HubspotDataTypes.NUMBER
-        except:
+        except Exception:
             pass
         # TODO: THis can be much more thorough, especially with regard to categorical types, but is good enough for now
         return HubspotDataTypes.STRING
@@ -26,12 +26,12 @@ class TypeInferenceUtils:
         try:
             float(v)
             return HubspotFieldTypes.NUMBER
-        except:
+        except Exception:
             pass
         try:
             int(v)
             return HubspotFieldTypes.NUMBER
-        except:
+        except Exception:
             pass
         # TODO: THis can be much more thorough, especially with regard to categorical types, but is good enough for now
         return HubspotFieldTypes.TEXT
