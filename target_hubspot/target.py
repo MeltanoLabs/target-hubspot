@@ -55,10 +55,8 @@ class TargetHubSpot(Target):
                     ),
                     th.Property(
                         "columnObjectTypeId",
-                        th.StringType,
+                        th.StringType(pattern="^[0-9]+-[0-9]+$"),
                         required=True,
-                        # TODO validate this some other way since you can use custom values
-                        allowed_values=["0-1", "0-2", "0-3", "0-5", "0-48", "0-49", "0-47", "0-4", "0-27", "0-7", "0-8", "0-18", "0-116", "0-54", "0-19"],
                         description=(
                             "The name or objectTypeId value of the object or activity "
                             "to which the data belongs. Refer to [this article](https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id) "  # noqa: E501
