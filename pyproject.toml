@@ -11,35 +11,33 @@ keywords = [
 license = "Apache-2.0"
 
 [tool.poetry.dependencies]
-python = "<3.12,>=3.7.1"
-singer-sdk = { version="^0.30.0" }
+python = ">=3.9"
+hubspot-api-client = "~=11.1.0"
+singer-sdk = { version="~=0.45.0" }
 fs-s3fs = { version = "^1.1.1", optional = true }
-requests = "^2.31.0"
-hubspot-api-client = "^8.0.0"
+requests = "~=2.32.0"
 
-[tool.poetry.dev-dependencies]
-pytest = "^7.2.1"
-singer-sdk = { version="^0.30.0", extras = ["testing"] }
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8"
+singer-sdk = { version="~=0.45.0", extras = ["testing"] }
 
 [tool.poetry.extras]
 s3 = ["fs-s3fs"]
 
 [tool.ruff]
-ignore = [
-    "ANN101",  # missing-type-self
-    "ANN102",  # missing-type-cls
-]
-select = ["ALL"]
+target-version = "py39"
 src = ["target_hubspot"]
-target-version = "py37"
+
+[tool.ruff.lint]
+select = ["ALL"]
 
 [tool.ruff.flake8-annotations]
 allow-star-arg-any = true
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["target_hubspot"]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [build-system]
