@@ -15,9 +15,10 @@ Built with the [Meltano Singer SDK](https://sdk.meltano.com).
 | Setting             | Required | Default | Description |
 |:--------------------|:--------:|:-------:|:------------|
 | access_token        | True     | None    | Your HubSpot private app API access token. See the [docs](https://developers.hubspot.com/docs/api/private-apps) for more details. |
-| column_mapping      | True     | None    | An array including an object entry for each column in your import file stream. |
-| date_format         | False    | YEAR_MONTH_DAY | The format for dates included in the import file stream. |
-| import_operations   | False    | UPDATE  | Used to indicate whether the import should create and update, only create, or only update records for a certain object or activity. |
+| column_mapping      | True     | None    | An array including an object entry for each column in your import file stream. Columns are matched to stream properties by `columnName`; stream properties without an entry are not imported. |
+| date_format         | False    | YEAR_MONTH_DAY | The format the target writes date values in. Date and time values are written as UNIX timestamps in milliseconds. |
+| import_operations   | False    | UPDATE  | Used to indicate whether the import should create and update, only create, or only update records. Applies to every object type in the column mapping. |
+| import_timeout_seconds | False | 3600    | How long to wait for HubSpot to finish each import before failing the run. |
 | stream_maps         | False    | None    | Config object for stream maps capability. For more information check out [Stream Maps](https://sdk.meltano.com/en/latest/stream_maps.html). |
 | stream_map_config   | False    | None    | User-defined config values to be used within map expressions. |
 | flattening_enabled  | False    | None    | 'True' to enable schema flattening and automatically expand nested properties. |
@@ -27,10 +28,10 @@ A full list of supported settings and capabilities is available by running: `tar
 
 ## Supported Python Versions
 
-* 3.8
-* 3.9
 * 3.10
 * 3.11
+* 3.12
+* 3.13
 
 ## Usage
 

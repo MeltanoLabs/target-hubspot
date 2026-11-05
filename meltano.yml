@@ -13,7 +13,7 @@ plugins:
     capabilities:
     - about
     - stream-maps
-    - record-flattening
+    - schema-flattening
     settings:
     - name: access_token
       label: Access Token
@@ -50,6 +50,11 @@ plugins:
       - label: Upsert
         value: UPSERT
       value: UPDATE
+    - name: import_timeout_seconds
+      label: Import Timeout Seconds
+      description: How long to wait for HubSpot to finish each import before failing the run.
+      kind: integer
+      value: 3600
     - name: stream_maps
       label: Stream Maps
       description: Config object for stream maps capability. For more information check
