@@ -31,21 +31,19 @@ class TargetHubSpot(Target):
                         "columnName",
                         th.StringType,
                         required=True,
-                        description="The name of the column header. This is based on the stream from a tap."
+                        description="The name of the column header. This is based on the stream from a tap.",
                     ),
                     th.Property(
                         "propertyName",
                         th.StringType,
                         required=True,
-                        description="The internal name of the HubSpot property that the data will map to. Settings -> Data Management -> Properties. Then select the object type from the drop down, search for the property, click on it, then next to the label is a code symbol that will show you the internal name for the property."
+                        description="The internal name of the HubSpot property that the data will map to. Settings -> Data Management -> Properties. Then select the object type from the drop down, search for the property, click on it, then next to the label is a code symbol that will show you the internal name for the property.",
                     ),
                     th.Property(
                         "columnObjectTypeId",
                         th.StringType,
                         required=True,
-                        # TODO validate this some other way since you can use custom values
-                        allowed_values=["0-1", "0-2", "0-3", "0-5", "0-48", "0-49", "0-47", "0-4", "0-27", "0-7", "0-8", "0-18", "0-116", "0-54", "0-19"],
-                        description="The name or objectTypeId value of the object or activity to which the data belongs. Refer to [this article](https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id) for a full list of objectTypeId values."
+                        description="The name or objectTypeId value of the object or activity to which the data belongs, for example `0-1` for contacts or `2-123456` for a custom object. Refer to [this article](https://developers.hubspot.com/docs/api/crm/understanding-the-crm#object-type-id) for a full list of objectTypeId values.",
                     ),
                     th.Property(
                         "columnType",
@@ -54,34 +52,40 @@ class TargetHubSpot(Target):
                             "HUBSPOT_OBJECT_ID",
                             "HUBSPOT_ALTERNATE_ID",
                         ],
-                        description="An optional field used to specify that a column contains a unique identifier property. This is how the import knows that field to update/upsert on. See the [unique identifier docs](https://developers.hubspot.com/docs/api/crm/understanding-the-crm) for more details."
-                    )
+                        description="An optional field used to specify that a column contains a unique identifier property. This is how the import knows that field to update/upsert on. See the [unique identifier docs](https://developers.hubspot.com/docs/api/crm/understanding-the-crm) for more details.",
+                    ),
                 )
             ),
             required=True,
-            description="An array including an object entry for each column in your import file stream.",
+            description="An array including an object entry for each column in your import file stream. Columns are matched to stream properties by `columnName`; stream properties without an entry are not imported.",
         ),
         th.Property(
             "date_format",
             th.StringType,
-            description="The format for dates included in the import file stream.",
+            description="The format the target writes date values in. Date and time values are written as UNIX timestamps in milliseconds.",
             default="YEAR_MONTH_DAY",
             allowed_values=[
                 "MONTH_DAY_YEAR",
                 "YEAR_MONTH_DAY",
                 "DAY_MONTH_YEAR",
-            ]
+            ],
         ),
         th.Property(
             "import_operations",
             th.StringType,
-            description="Used to indicate whether the import should create and update, only create, or only update records for a certain object or activity.",
+            description="Used to indicate whether the import should create and update, only create, or only update records. Applies to every object type in the column mapping.",
             default="UPDATE",
             allowed_values=[
                 "CREATE",
                 "UPDATE",
                 "UPSERT",
-            ]
+            ],
+        ),
+        th.Property(
+            "import_timeout_seconds",
+            th.IntegerType,
+            description="How long to wait for HubSpot to finish each import before failing the run.",
+            default=3600,
         ),
     ).to_dict()
 
